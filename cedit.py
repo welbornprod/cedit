@@ -12,17 +12,25 @@
     If none of the 'popular' commands are found, you have to set your own.
     They can be set using the 'set' command. (see --help).
     
-    requires: easysettings 
+    Requires: easysettings 
                   saves configuration, to install: pip install easysettings
               docopt 
                   parses arguments, to install: pip install docopt
+    
+    Installation:
+    To install cedit as a global terminal command you can use the 'install' command.
+    For installing for a single user run:
+        ./cedit.py install user
+    
+    For installing in /usr/bin (for all users) run:
+        sudo ./cedit.py install
 
     Created on Jan 19, 2013
 
     Christopher Welborn <cj@welbornprod.com>
 '''
 from __future__ import print_function
-import os, sys
+import os,os.path, sys
 import subprocess
 
    
@@ -45,7 +53,8 @@ except ImportError as ex_es:
 # Current version    
 _VERSION = "1.1"
 _NAME = 'cedit'
-_SCRIPTFILE = sys.argv[0]
+_SCRIPTFILE = sys.argv[0][2:] if sys.argv[0].startswith('./') else sys.argv[0]
+
 
 # Usage string
 usage_str = """{{NAME}} v.{{VERSION}}
@@ -66,7 +75,10 @@ usage_str = """{{NAME}} v.{{VERSION}}
     Commands:
         set <setting> <value>  : set a setting's value.
         list                   : list all current settings.
-        
+        install [user]         : installs a symlink to this script in /usr/bin
+                                 if 'user' is given, it will try to install in:
+                                 /home/USERNAME/.local/bin
+                                 
     Settings:
         editor   : path to favorite editor.
         elevcmd  : path to favorite elevation command.
@@ -88,7 +100,9 @@ settings = easysettings.easysettings(os.path.join(sys.path[0], "cedit.conf"))
 settings.name = "cedit"
 settings.version = _VERSION
 
-short_commands = ("list", "set")
+# stupid trick to fix docopt thinking these are filenames.
+short_commands = ("list", "set", "install")
+# only allow these options to be written to config.
 good_options = ("editor", "elevcmd")
 
 def main(dargs):
@@ -109,7 +123,7 @@ def main(dargs):
     
     # catch short commands.
     if filename in short_commands:
-        return do_command(filename)
+        return do_command(filename, args=None)
     
     # catch commands
     elif dargs['<command>'] is not None:
@@ -131,6 +145,19 @@ def do_command(cmdname, args=None):
         cmd_list()
     elif cmdname == 'set':
         return cmd_set(args)
+    elif cmdname == 'install':
+        if args is None:
+            installtype = None
+        else:
+            installtype = args[0].lower()
+            if installtype.lower() == 'global':
+                installtype = None
+            else:
+                if installtype not in ("global", "user"):
+                    print("unknown install type!: " + installtype + '\n' + \
+                      "expecting: user or global\n")
+                    return 1
+        return cmd_install(installtype)
     else:
         print("cedit command not found: " + cmdname)
         return 1
@@ -185,7 +212,73 @@ def cmd_list():
         for setting_ in currentsettings:
             print('    ' + setting_.replace('=', ' : '))
             
-     
+
+def cmd_install(installtype):
+    """ installs cedit globally by default,
+        passing 'user'  will try to install for only this user.
+    """
+    scriptfile = os.path.realpath(__file__)
+    if installtype is None:
+        # global install  
+        location = '/usr/bin'
+
+    else:
+        # local install
+        uname = get_username()
+        if uname is None:
+            print("unable to find user name!\n" + \
+                  "create a symlink from this file to your user directory.\n" + \
+                  "ln -s " + scriptfile + " /home/YOURNAME/.local/bin\n" + \
+                  "** make sure your home/bin is in the PATH environment variable.\n" + \
+                  "   put 'PATH=/home/YOURNAME/.local/bin:$PATH' in bashrc or .profile.\n" + \
+                  "   make sure path is exported with: export PATH\n")
+            return 1
+        location = '/home/' + uname + '/.local/bin'
+
+        if not os.path.isdir(location):
+            print("not a directory: " + location + '\n' + \
+                  "create the directory and try again.\n" + \
+                  "make sure the directory is included in your PATH environment variable.\n")
+            return 1
+    
+    # already installed?    
+    filename = os.path.join(location, _NAME)
+    from commands import getoutput
+    installed_loc = getoutput('which ' + _NAME)
+    
+    if installed_loc != '':
+        print("it seems that cedit is already installed at: " + installed_loc + '\n' + \
+              "you will need to remove it if you want to re-install cedit.\n")
+        return 1
+    try:
+        print("trying to create symlink in: " + location)
+        os.symlink(scriptfile, filename)
+        print("success!\n" + \
+              "...you may have to restart your terminal to use the command '" + _NAME + "'")
+    except OSError as exos:
+        print("error:\n" + str(exos) + '\n\n' + \
+              "try running 'cedit install' as root for global installation.\n" + \
+              "example: sudo cedit install\n")
+        return 1
+    except Exception as ex:
+        print("unable to create symlink with: " + filename + '\n' + str(ex))
+        return 1
+    
+    return 0
+
+def get_username():
+    """ trys several different ways to get user name """
+    
+    uname = os.environ.get("USER", None)
+    if uname is None:
+        uname = os.environ.get("LOGNAME", None)
+        if uname is None:
+            uname = os.environ.get("HOME", None)
+            if uname is not None:
+                uname = os.path.split(uname)[1]
+    return uname
+ 
+
 def get_editor():
     if settings.get('editor') == "":
         # no editor set
