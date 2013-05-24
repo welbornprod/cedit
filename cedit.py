@@ -334,14 +334,26 @@ def get_elevcmd():
             
 def needs_root(sfilename):
     try:
-        return (os.stat(sfilename).st_uid == 0)
+        if (os.stat(sfilename).st_uid == 0):
+            return True
+        else:
+            # check files that aren't owned by root.
+            # we may not be able to write to them.
+            return can_write(sfilename)
     except OSError as exos: #@UnusedVariable: exos
         return True
     except Exception as ex:
         print("needs_root(): Error: \n" + str(ex))
         # i dunno.
         return True
+
+def can_write(filename):
+    """ checks for write access on a file. """
     
+    if (os.access(filename, os.O_RDONLY)):
+        return False
+    else:
+        return (os.access(filename, os.O_RDWR))
 
 def check_file(filename):
     """ checks if a file exists, if not asks user if we should continue.
