@@ -10,7 +10,7 @@ password. If they are not required, your editor command will be used alone.
 
 
 Usage:
-======
+------
 	
 	cedit <filename>
 		...to open a file.
@@ -29,7 +29,7 @@ you will need to set the editor like this:
 	
 	
 With no settings:
-=================
+-----------------
 
 If no settings are set, cedit will try to look for a few 'popular' commands to
 work with. 
@@ -50,7 +50,7 @@ open your 'root-permissions' file by running: `kdesudo kate <filename>`
 If the file doesn't require root permissions then just: `kate <filename>`
 
 Future:
-=======
+-------
 
 There may be plans to allow different editors to be chosen for different file-types.
 Right now cedit works as expected, as long as you only use one editor most often.
