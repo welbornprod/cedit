@@ -22,7 +22,7 @@ Usage:
 	cedit set elevcmd=[your elevation command]
 		...sets your favorite commands so cedit will remember what to use.
 
-If you favorite editor isn't in the same directory as cedit or /usr/bin, then
+If your favorite editor isn't in the same directory as cedit or /usr/bin, then
 you will need to set the editor like this:
 
 	cedit set editor=/my/path/to/myeditor
