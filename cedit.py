@@ -350,10 +350,7 @@ def needs_root(sfilename):
 def can_write(filename):
     """ checks for write access on a file. """
     
-    if (os.access(filename, os.O_RDONLY)):
-        return False
-    else:
-        return (os.access(filename, os.O_RDWR))
+    return (os.access(filename, os.W_OK))
 
 def check_file(filename):
     """ checks if a file exists, if not asks user if we should continue.
