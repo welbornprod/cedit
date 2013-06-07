@@ -33,7 +33,8 @@ from __future__ import print_function
 import os, os.path, sys
 import subprocess
 
-   
+# enable/disable debug mode
+DEBUG = True
 import_failmsg =  "You need to have {0} installed to use this program.\n" + \
                   "To install {0} run the command:\n" + \
                   "pip install {1}\n"   
@@ -61,13 +62,14 @@ usage_str = """{{NAME}} v.{{VERSION}}
 
     Usage:
         cedit -h | -a | -v
-        cedit <filename>
-        cedit <command> <commandargs>...
+        cedit <filename> [options]
+        cedit <command> <commandargs>... [options]
         
     Options:
         -h,--help     : show this help message.
         -a,--about    : show message about cedit.
         -v,--version  : show version.
+        -d,--debug    : for development, prints random msgs.
         filename      : file to open.
         command       : which command to run.
         commandargs   : arguments for the command.
@@ -335,11 +337,14 @@ def get_elevcmd():
 def needs_root(sfilename):
     try:
         if (os.stat(sfilename).st_uid == 0):
+            print_debug("os.stat said root.")
             return True
         else:
             # check files that aren't owned by root.
             # we may not be able to write to them.
-            return can_write(sfilename)
+            c_w = can_write(sfilename)
+            print_debug("os.stat said not root, can_write=" + str(c_w))
+            return (not c_w)
     except OSError as exos: #@UnusedVariable: exos
         return True
     except Exception as ex:
@@ -349,7 +354,7 @@ def needs_root(sfilename):
 
 def can_write(filename):
     """ checks for write access on a file. """
-    
+ 
     return (os.access(filename, os.W_OK))
 
 def check_file(filename):
@@ -409,6 +414,9 @@ def run_exec(cmdlist):
     return ret
 
 
+def print_debug(s):
+    if DEBUG: print("DEBUG: " + s)
+    
 def printdict(dict_):
     print(str(dict_).replace(',','\n').strip('{').strip('}'))
 
