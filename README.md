@@ -73,6 +73,12 @@ Without any settings, if you have both `kate` and `kdesudo` installed, cedit wil
 open your 'root-permissions' file by running: `kdesudo kate <filename>`
 If the file doesn't require root permissions then just: `kate <filename>`
 
+Bug Fixes:
+----------
+
+Fixed stupid error where `needs_root()` returned `can_write()` instead of
+`needs_root() = (not can_write())`. My bad.
+
 Future:
 -------
 

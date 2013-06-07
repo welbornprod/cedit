@@ -52,7 +52,7 @@ except ImportError as ex_es:
     sys.exit(1)
 
 # Current version    
-_VERSION = "1.1"
+_VERSION = "1.1.2"
 _NAME = 'cedit'
 _SCRIPTFILE = sys.argv[0][2:] if sys.argv[0].startswith('./') else sys.argv[0]
 
