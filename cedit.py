@@ -34,7 +34,7 @@ import os, os.path, sys
 import subprocess
 
 # enable/disable debug mode
-DEBUG = True
+DEBUG = False
 import_failmsg =  "You need to have {0} installed to use this program.\n" + \
                   "To install {0} run the command:\n" + \
                   "pip install {1}\n"   
@@ -336,6 +336,9 @@ def get_elevcmd():
             
 def needs_root(sfilename):
     try:
+        # already root user
+        if os.getuid() == 0: return False
+        # file is owned by root.
         if (os.stat(sfilename).st_uid == 0):
             print_debug("os.stat said root.")
             return True
