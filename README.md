@@ -47,10 +47,13 @@ Installation:
 
 You can create a symlink to the cedit.py script yourself, or you can use the builtin 'install' command.
 
-To install cedit in /usr/bin (for all users) run:
+To install cedit in /usr/local/bin or /usr/bin (for all users) run:
 
     sudo ./cedit.py -i
     or: sudo ./cedit.py --install
+    
+    ** cedit will search $PATH and if /usr/local/bin is found (and exists as a dir) then it is used.
+    ** otherwise, /usr/bin is used.
 
 
 To install cedit for a single user run:
