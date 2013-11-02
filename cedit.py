@@ -48,6 +48,7 @@ if not PYTHON3:
 
 # Current version    
 _VERSION = '1.3.0'
+_VERSIONMINI = '1'
 # Name, also used in creating symlinks in cmd_install()
 _NAME = 'cedit'
 _SCRIPTFILE = sys.argv[0][2:] if sys.argv[0].startswith('./') else sys.argv[0]
@@ -234,7 +235,7 @@ def check_file(filename):
     else:
         print('File does not exist!: ' + filename)
         print('\nsome editors will automatically create this file...')
-        response = raw_input('would you like to continue anyway? (y/n): ')
+        response = input('would you like to continue anyway? (y/n): ')
         return (response.lower().strip(' ').strip('\t').startswith('y'))
 
 
