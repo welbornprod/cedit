@@ -38,7 +38,8 @@ Usage:
 If your favorite editor isn't in the same directory as cedit or /usr/bin, then
 you will need to set the editor like this:
 
-	cedit set editor=/my/path/to/myeditor
+	cedit --editor /my/path/to/editor
+	(same for --elevcmd)
 	
 
 Installation:
@@ -47,17 +48,28 @@ Installation:
 You can create a symlink to the cedit.py script yourself, or you can use the builtin 'install' command.
 
 To install cedit in /usr/bin (for all users) run:
-    
+
     sudo ./cedit.py -i
     or: sudo ./cedit.py --install
 
+
 To install cedit for a single user run:
-    
+
     ./cedit.py -i -u
     or: ./cedit.py --install --user
+    
+    ** this will try to install cedit to /home/USERNAME/bin, ../local/bin, ../.local/bin
+    ** or whatever /home/USERNAME/???/bin that is found in $PATH.
+    ** first valid and existing dir found is used.
 
-    ** this will try to install cedit to /home/USERNAME/.local/bin
-    ** you will need this directory to exist, and be included in your PATH variable.
+
+To specify where to install cedit:
+
+    ./cedit.py --install --path /my/path/for/cedit
+    
+    ** this must be an existing directory, and you must have the required permissions to 
+    ** create a symlink there.
+
 
 If everything went well, or you manually created the symlink yourself, you should be able to run
 cedit like this from anywhere:
@@ -92,6 +104,10 @@ If the file doesn't require root permissions then just: `kate <filename>`
 Changes:
 --------
 
+Version 1.3.0:
+    Added better installer options (more global dirs, $PATH search for good dir for symlinks)
+    Added --remove (uninstaller) (removes the cedit symlink)
+    
 Version 1.2.2:
     Changed flags used when setting options, code is clearer.
     Added more help for when required modules aren't installed. (better messages)
@@ -116,7 +132,7 @@ There may be plans to allow different editors to be chosen for different file-ty
 Right now cedit works as expected, as long as you only use one editor most often.
 I may add the ability to set favorite editors for favorite file-types like:
 
-	cedit set .py=geany
+	cedit --set .py,geany
 
 
 	
