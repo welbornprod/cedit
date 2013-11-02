@@ -31,8 +31,10 @@
 
     Christopher Welborn <cj@welbornprod.com>
 """
+# Python2 future print function, Python3 current print function.
 from __future__ import print_function
 import os
+import re
 import sys
 import subprocess
 
@@ -40,11 +42,17 @@ import subprocess
 DEBUG = False
 # determine python version (for better help on required packages/pip)
 PYTHON3 = not sys.version < '3'
+# determine input function.
+if not PYTHON3:
+    input = raw_input
+
 # Current version    
 _VERSION = '1.2.2'
+# Name, also used in creating symlinks in cmd_install()
 _NAME = 'cedit'
 _SCRIPTFILE = sys.argv[0][2:] if sys.argv[0].startswith('./') else sys.argv[0]
-
+# looks better in help to have the real user name, if not found then just use 'user'
+_USER = os.environ.get('USER', 'user')
 
 # Usage string
 usage_str = """{name} v.{version} (running on Python {pyversion})
@@ -53,8 +61,9 @@ usage_str = """{name} v.{version} (running on Python {pyversion})
         cedit -h | -a | -v
         cedit <filename>... [options]
         cedit -e path_to_editor | -c path_to_elevcmd
-        cedit -i [-u]
+        cedit -i [-u | -p dir]
         cedit -l
+        cedit -r
         
     Options:
         -a,--about                      : show message about cedit.
@@ -62,10 +71,17 @@ usage_str = """{name} v.{version} (running on Python {pyversion})
         -d,--debug                      : for development, prints random msgs.
         -e filepath,--editor filepath   : set favorite editor, where filepath is the path to your editor.
         -h,--help                       : show this help message.
-        -i,--install                    : install cedit, creates symlink in /usr/bin or home (see -u)
+        -i,--install                    : install cedit, creates symlink in /usr/local/bin, /usr/bin, or home (see -u and -p)
+                                          if /usr/local/bin is found in $PATH, it is used. otherwise /usr/bin is used.
+                                          if -u or -p is passed also, the install path is determined by the flag.
+                                          cedit will ask for confirmation before installing.
         -l,--list                       : list current cedit settings (editor/elevcmd)
+        -p dir,--path dir               : when installing, install to specified directory.
+        -r,--remove                     : remove the installed symlink for cedit if installed. (may require permissions)
         -s,--shellall                   : shell one process per file, instead of sending all file names at once.
-        -u,--user                       : when installing, only install for user ($HOME/.local/bin)
+        -u,--user                       : when installing, only install for user.                                       
+                                          $PATH is searched for dirs like /home/{user}/bin.
+                                          without $PATH, common dirs are looked for. 
         -v,--version                    : show version.
         filename                        : file to open.
                                          
@@ -89,23 +105,24 @@ usage_str = """{name} v.{version} (running on Python {pyversion})
         cedit --elevcmd kdesudo
             ...sets favorite elevation command to 'kdesudo'
             
-""".format(name=_NAME, version=_VERSION, pyversion=sys.version.split()[0])
+""".format(name=_NAME, version=_VERSION, pyversion=sys.version.split()[0], user=_USER)
 
 
 # I hate putting these functions here, but for better help I will.
+def cmd_exists(shortname):
+    """ Determines if link/alias/shortname of command is available using 'which' command.
+        returns True, False
+    """
+
+    whichcmd = ['which', shortname]
+    retcode = subprocess.call(whichcmd, stdout=subprocess.PIPE)
+    return retcode == 0
+
+
 def get_pip_name():
     """ determine if pip is installed, if it is find whether or not pip3 is installed.
         return string containing desired pip version, or '' if none is found.
     """
-    def cmd_exists(shortname):
-        """ Determines if link/alias/shortname of command is available using 'which' command.
-            returns True, False
-        """
-
-        whichcmd = ['which', shortname]
-        retcode = subprocess.call(whichcmd, stdout=subprocess.PIPE)
-        return retcode == 0
-
     pip3versions = '3', '3.1', '3.2', '3.3'
     pip2versions = '', '2', '2.7'
     pip2exes = []
@@ -229,6 +246,20 @@ def check_files(filenames):
     return True
 
 
+def check_path(sdir):
+    """ Checks users $PATH to see if directory is in it. """
+
+    paths = get_userpath()
+    if paths:
+        if sdir in paths:
+            return True
+        else:
+            if sdir.endswith('/'):
+                if sdir[:-1] in paths:
+                    return True
+    return False
+
+
 def cmd_list():
     """ list command. """
     
@@ -252,46 +283,75 @@ def cmd_list():
     return 0
             
 
-def cmd_install(useronly=False):
+def cmd_location(shortname):
+    """ Like cmd_exists() except, it returns the output from 'which'.
+        On failure, returns None.
+    """
+
+    try:
+        output = subprocess.check_output(['which', shortname])
+        return output.decode('utf-8').strip('\n').strip()
+    except subprocess.CalledProcessError:
+        return None
+
+
+def cmd_install(userdir=None):
     """ installs cedit globally by default,
-        useronly == True  will try to install for only this user.
+        userdir == ('auto' or '') will look for users /bin directory.
+        userdir == '/path/to/dir'  will try to install in that directory.
+        userdir == None will try to install in /usr/bin
     """
     scriptfile = os.path.realpath(__file__)
+    if not scriptfile:
+        print('\nunable to determine full path to cedit script!\n')
+        return 1
 
-    if useronly:
-        # local install
-        uname = get_username()
-        if uname is None:
-            print('unable to find user name!\n' +
-                  'create a symlink from this file to your user directory.\n' +
-                  'ln -s ' + scriptfile + ' /home/YOURNAME/.local/bin\n' +
-                  '** make sure your home/bin is in the PATH environment variable.\n' +
-                  '   put \'PATH=/home/YOURNAME/.local/bin:$PATH\' in bashrc or .profile.\n' +
-                  '   make sure path is exported with: export PATH\n')
-            return 1
-        location = '/home/' + uname + '/.local/bin'
+    if userdir is not None:
+        # local install, try auto first.
+        if userdir == 'auto' or userdir == '':
+            userbin = get_userbin()
+            if userbin:
+                location = userbin
+            else:
+                location = None
+        # manual dir was set.
+        else:
+            location = userdir
 
         if not os.path.isdir(location):
             print('not a directory: ' + location + '\n' +
                   'create the directory and try again.\n' +
-                  'make sure the directory is included in your PATH environment variable.\n')
+                  'also make sure the directory is included in your PATH environment variable.\n' +
+                  'otherwise, the symlink won\'t work.')
             return 1
     else:
         # Global
-        location = '/usr/bin'
+        if check_path('/usr/local/bin') and os.path.isdir('/usr/local/bin'):
+            location = '/usr/local/bin'
+        else:
+            location = '/usr/bin'
 
-    # already installed?    
-    filename = os.path.join(location, _NAME)
-    from commands import getoutput
-    installed_loc = getoutput('which ' + _NAME)
-    
-    if installed_loc != '':
-        print('it seems that cedit is already installed at: ' + installed_loc + '\n' +
+    # already installed?
+    finalname = os.path.join(location, _NAME)
+    installedloc = cmd_location(_NAME)
+    if not installedloc:
+        # Try full path.
+        installedloc = cmd_location(finalname)
+    if installedloc:
+        print('it seems that cedit is already installed at: ' + installedloc + '\n' +
               'you will need to remove it if you want to re-install cedit.\n')
         return 1
+
+    # Confirm installation.
+    doinstall = input('cedit will install to: {}\ncontinue with installation? (yes/no): '.format(location))
+    if not doinstall.lower().strip().strip('\t').startswith('y'):
+        print('\ninstallation canceled.\n')
+        return 1
+
+    # Try Installation.
     try:
         print('trying to create symlink in: ' + location)
-        os.symlink(scriptfile, filename)
+        os.symlink(scriptfile, finalname)
         print('success!\n' +
               '...you may have to restart your terminal to use the command \'' + _NAME + '\'')
     except OSError as exos:
@@ -300,10 +360,111 @@ def cmd_install(useronly=False):
               'example: sudo cedit install\n')
         return 1
     except Exception as ex:
-        print('unable to create symlink with: ' + filename + '\n' + str(ex))
+        print('unable to create symlink with: ' + finalname + '\n' + str(ex))
         return 1
     
     return 0
+
+
+def cmd_remove():
+    """ Trys to uninstall/remove the cedit symlink (if any exists) """
+
+    loc = cmd_location(_NAME)
+    if not loc:
+        print('\ncan\'t finc {} installed anywhere.\n'.format(_NAME))
+        return 1
+
+    # Confirm removal.
+    doremove = input('this will remove {} from: {}\n'.format(_NAME, loc) +
+                     'you will need to have the permissions required to do this.\n' +
+                     '\ncontinue with removal? (yes/no): ')
+    if not doremove.lower().strip().strip('\t').startswith('y'):
+        print('\nremoval canceled.\n')
+        return 1
+
+    # Try removing it.
+    try:
+        os.remove(loc)
+    except OSError as exos:
+        print('\nunable to remove {}!:\n{}'.format(_NAME, exos))
+        return 1
+
+    # Success.
+    print('\n{} was successfully removed from: {}\n'.format(_NAME, loc))
+    return 0
+
+
+def get_userpath():
+    """ Trys to retrieve a list of $PATH entries, returns None on failure.
+    """
+    ospath = os.environ.get('PATH', None)
+    paths = None
+    if ospath:
+        paths = ospath.split(':') if ':' in ospath else [ospath]
+    return paths
+
+
+def get_userbin():
+    """ trys to retrieve the users /home/user/*/bin, if one is available.
+        returns: String containing path to known /bin, or None on failure.
+    """
+
+    # Try getting username for finding a bin later.
+    username = get_username()
+    # Try getting $PATH, for finding a bin later.
+    ospath = os.environ.get('PATH', None)
+    if ospath:
+        paths = ospath.split(':') if ':' in ospath else [ospath]
+    else:
+        paths = None
+
+    if username:
+        # Try finding it in $PATH
+        ospath = os.environ.get('PATH', None)
+        if paths:
+            repat = re.compile(r'/home/{}.+/bin'.format(username))
+            for pathentry in paths:
+                rematch = repat.search(pathentry)
+                if rematch:
+                    # Found /home/username/bin or /home/username/dir/bin
+                    if os.path.isdir(pathentry):
+                        return pathentry
+        # Try brute forcing
+        possiblepaths = 'bin', 'local/bin', '.local/bin'
+        for possiblepath in possiblepaths:
+            fullpath = os.path.join('/home', username, possiblepath)
+            if os.path.isdir(fullpath):
+                # Found existing /home/user/bin dir.
+                return fullpath
+
+    # No user name to go on, try sketchy environ search.
+    # (may return someone elses /home/bin if they are using it in PATH)
+    elif paths:
+        repat = re.compile('/home/.+/bin')
+        for pathentry in paths:
+            rematch = repat.search(pathentry)
+            if rematch:
+                # Found someones /home/?/bin...
+                return pathentry
+
+    # Nothing to go on. no username, no paths.
+    return None
+
+
+def get_userhome():
+    """ trys a couple methods to get the users /home directory.
+        returns string path, or None on failure.
+    """
+
+    homedir = os.environ.get('HOME', None)
+    if homedir is None:
+        username = get_username()
+        if username:
+            tryhomedir = os.path.join('/home', username)
+            if os.path.isdir(tryhomedir):
+                homedir = tryhomedir
+
+    return homedir
 
 
 def get_username():
@@ -508,7 +669,15 @@ def main(argd):
         return 0
     # install
     elif argd['--install']:
-        return cmd_install(useronly=argd['--user'])
+        if argd['--path']:
+            # User-specified path
+            return cmd_install(userdir=argd['--path'])
+        elif argd['--user']:
+            # Auto user-dir.
+            return cmd_install(userdir='auto')
+        else:
+            # Global dir.
+            return cmd_install()
     # set editor
     elif argd['--editor']:
         return set_setting_safe('editor', argd['--editor'])
@@ -518,6 +687,9 @@ def main(argd):
     # list current settings.
     elif argd['--list']:
         return cmd_list()
+    # remove (uninstall)
+    elif argd['--remove']:
+        return cmd_remove()
 
     # get filenames, check existence
     filenames = argd['<filename>']
