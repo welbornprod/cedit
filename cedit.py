@@ -22,10 +22,10 @@
     Installation:
     To install cedit as a global terminal command you can use the 'install' command.
     For installing for a single user run:
-        ./cedit.py install user
+        ./cedit.py --install --user
     
     For installing in /usr/bin (for all users) run:
-        sudo ./cedit.py install
+        sudo ./cedit.py --install
 
     Created on Jan 19, 2013
 
