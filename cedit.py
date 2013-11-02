@@ -234,7 +234,7 @@ def check_file(filename):
     else:
         print('File does not exist!: ' + filename)
         print('\nsome editors will automatically create this file...')
-        response = raw_input('would you like to continue anyway? (y/n): ')
+        response = input('would you like to continue anyway? (y/n): ')
         return (response.lower().strip(' ').strip('\t').startswith('y'))
 
 
