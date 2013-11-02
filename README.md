@@ -8,6 +8,12 @@ is used. This way, you will never see another 'no permissions' message again.
 If root-permissions are required, your elevation command will ask you for the 
 password. If they are not required, your editor command will be used alone.
 
+Cedit does not save your password, that wouldn't be very smart.
+It only shells your favorite elevation command to allow you to enter your password 
+before opening the editor.
+
+(something i always forgot to do before using cedit :P)
+
 
 Usage:
 ------
@@ -15,12 +21,19 @@ Usage:
 	cedit <filename>
 		...to open a file.
 	
-	cedit list
+    cedit <file1> <file2>
+    cedit *.py
+        ...to open multiple files manually, or open all .py files using shell expansion.
+
+	cedit -l
 		...lists current configuration (editor and elevation command)
 		
-	cedit set editor=[your editor command]
-	cedit set elevcmd=[your elevation command]
+	cedit --editor path_to_editor
+	cedit --elevcmd path_to_elevcmd
 		...sets your favorite commands so cedit will remember what to use.
+           short options also available (-e, and -c).
+           if the executable is in /usr/bin, you don't have to type the full path.
+
 
 If your favorite editor isn't in the same directory as cedit or /usr/bin, then
 you will need to set the editor like this:
@@ -35,19 +48,21 @@ You can create a symlink to the cedit.py script yourself, or you can use the bui
 
 To install cedit in /usr/bin (for all users) run:
     
-    sudo ./cedit.py install
+    sudo ./cedit.py -i
+    or: sudo ./cedit.py --install
 
 To install cedit for a single user run:
     
-    ./cedit.py install user
-    
+    ./cedit.py -i -u
+    or: ./cedit.py --install --user
+
     ** this will try to install cedit to /home/USERNAME/.local/bin
     ** you will need this directory to exist, and be included in your PATH variable.
 
 If everything went well, or you manually created the symlink yourself, you should be able to run
 cedit like this from anywhere:
     
-    cedit -a
+    cedit /root/needs_sudo.txt
 
 
 With no settings:
@@ -73,11 +88,26 @@ Without any settings, if you have both `kate` and `kdesudo` installed, cedit wil
 open your 'root-permissions' file by running: `kdesudo kate <filename>`
 If the file doesn't require root permissions then just: `kate <filename>`
 
+
+Changes:
+--------
+
+Version 1.2.2:
+    Changed flags used when setting options, code is clearer.
+    Added more help for when required modules aren't installed. (better messages)
+    Added multi-file ability (something 1.0 should've had to begin with.)
+    ...if your favorite editor doesn't support multi-files like "file1 file2 file3",
+       you can use --shellall and a new process will be shelled for each file.
+       (most editors will at least group them in the same window, if not you will
+        have multiple windows opened.)
+
+
 Bug Fixes:
 ----------
 
 Fixed stupid error where `needs_root()` returned `can_write()` instead of
 `needs_root() = (not can_write())`. My bad.
+
 
 Future:
 -------

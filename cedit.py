@@ -41,7 +41,7 @@ DEBUG = False
 # determine python version (for better help on required packages/pip)
 PYTHON3 = not sys.version < '3'
 # Current version    
-_VERSION = '1.2.1'
+_VERSION = '1.2.2'
 _NAME = 'cedit'
 _SCRIPTFILE = sys.argv[0][2:] if sys.argv[0].startswith('./') else sys.argv[0]
 
@@ -445,9 +445,12 @@ def set_setting_safe(opt, val):
             print('\nthat {} doesn\'t exist!: {}'.format(opt, val))
             return 1
 
-    settings.set(opt, val)
-    print('\n{} is now set to: {}'.format(opt, val))
-    return 0
+    if settings.setsave(opt, val):
+        print('\n{} is now set to: {}'.format(opt, val))
+        return 0
+    else:
+        print('\nUnable to set option: {}'.format(opt))
+        return 1
 
 
 def shell_file(filenames):
