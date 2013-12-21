@@ -44,9 +44,9 @@ DEBUG = False
 PYTHON3 = not sys.version < '3'
 # determine input function.
 if not PYTHON3:
-    input = raw_input
+    input = raw_input  # noqa
 
-# Current version    
+# Current version
 _VERSION = '1.3.0'
 # Name, also used in creating symlinks in cmd_install()
 _NAME = 'cedit'
@@ -219,7 +219,7 @@ except ImportError as ex_es:
 
 
 def can_write(filename):
-    """ checks for write access on a file. """
+    """ checks for write access on a file/dir. """
  
     return (os.access(filename, os.W_OK))
 
@@ -271,7 +271,7 @@ def cmd_list():
     namelengths = [len(o) for o in alloptions]
     longestnamelen = max(namelengths)
 
-    # print current settings   
+    # print current settings
     print('current settings:')
     for optname in alloptions:
         val = settings.get(optname)
@@ -541,30 +541,38 @@ def good_return(returnvalue):
 
 
 def needs_root(sfilename):
+    # already root user
+    if os.getuid() == 0:
+        return False
+
+    # If the file doesn't exist, stat the directory instead.
+    if os.path.exists(sfilename):
+        statpath = sfilename
+    else:
+        filedir, filename = os.path.split(sfilename)
+        statpath = filedir
+
     try:
-        # already root user
-        if os.getuid() == 0:
-            return False
         # file is owned by root.
-        if (os.stat(sfilename).st_uid == 0):
+        if (os.stat(statpath).st_uid == 0):
             print_debug('os.stat said root.')
             return True
         else:
             # check files that aren't owned by root.
             # we may not be able to write to them.
-            c_w = can_write(sfilename)
-            print_debug('os.stat said not root, can_write=' + str(c_w))
+            c_w = can_write(statpath)
+            print_debug('os.stat said not root, can_write={}'.format(c_w))
             return (not c_w)
     except OSError:
         return True
     except Exception as ex:
-        print('needs_root(): Error: \n' + str(ex))
+        print('needs_root(): Error: \n{}'.format(ex))
         # i dunno.
         return True
 
 
 def print_debug(s):
-    if DEBUG: 
+    if DEBUG:
         print('DEBUG: ' + s)
 
     
@@ -626,7 +634,7 @@ def shell_file(filenames):
         editor = '/usr/bin/' + editor
     if not os.path.isfile(editor):
         print('Editor not found!: ' + editor)
-        return 1   
+        return 1
     print('Using editor: ' + editor)
 
     # Start building command args.
