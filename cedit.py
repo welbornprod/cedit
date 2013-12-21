@@ -47,7 +47,7 @@ if not PYTHON3:
     input = raw_input  # noqa
 
 # Current version
-_VERSION = '1.3.0'
+_VERSION = '1.3.1'
 # Name, also used in creating symlinks in cmd_install()
 _NAME = 'cedit'
 _SCRIPTFILE = sys.argv[0][2:] if sys.argv[0].startswith('./') else sys.argv[0]
