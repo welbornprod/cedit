@@ -549,8 +549,10 @@ def needs_root(sfilename):
     if os.path.exists(sfilename):
         statpath = sfilename
     else:
-        filedir, filename = os.path.split(sfilename)
-        statpath = filedir
+        statpath = os.path.split(sfilename)[0]
+        if not statpath:
+            statpath = os.getcwd()
+        print_debug('new file, stat() dir: {}'.format(statpath))
 
     try:
         # file is owned by root.
@@ -666,7 +668,9 @@ def main(argd):
     """ Main entry point for cedit.
         Expects docopt argument dict.
     """
-   
+    global DEBUG
+    DEBUG = argd['--debug']
+
     # show about message?
     if argd['--about']:
         print(__doc__)
