@@ -5,11 +5,11 @@ Basic command-line tool to open files with your favorite editor.
 If root permissions are needed to open the file, your favorite elevation command
 is used. This way, you will never see another 'no permissions' message again.
 
-If root-permissions are required, your elevation command will ask you for the 
+If root-permissions are required, your elevation command will ask you for the
 password. If they are not required, your editor command will be used alone.
 
 Cedit does not save your password, that wouldn't be very smart.
-It only shells your favorite elevation command to allow you to enter your password 
+It only shells your favorite elevation command to allow you to enter your password
 before opening the editor.
 
 (something i always forgot to do before using cedit :P)
@@ -17,17 +17,17 @@ before opening the editor.
 
 Usage:
 ------
-	
+
 	cedit <filename>
 		...to open a file.
-	
+
     cedit <file1> <file2>
     cedit *.py
         ...to open multiple files manually, or open all .py files using shell expansion.
 
 	cedit -l
 		...lists current configuration (editor and elevation command)
-		
+
 	cedit --editor path_to_editor
 	cedit --elevcmd path_to_elevcmd
 		...sets your favorite commands so cedit will remember what to use.
@@ -40,7 +40,7 @@ you will need to set the editor like this:
 
 	cedit --editor /my/path/to/editor
 	(same for --elevcmd)
-	
+
 
 Installation:
 -------------
@@ -51,7 +51,7 @@ To install cedit in /usr/local/bin or /usr/bin (for all users) run:
 
     sudo ./cedit.py -i
     or: sudo ./cedit.py --install
-    
+
     ** cedit will search $PATH and if /usr/local/bin is found (and exists as a dir) then it is used.
     ** otherwise, /usr/bin is used.
 
@@ -60,7 +60,7 @@ To install cedit for a single user run:
 
     ./cedit.py -i -u
     or: ./cedit.py --install --user
-    
+
     ** this will try to install cedit to /home/USERNAME/bin, ../local/bin, ../.local/bin
     ** or whatever /home/USERNAME/???/bin that is found in $PATH.
     ** first valid and existing dir found is used.
@@ -69,14 +69,14 @@ To install cedit for a single user run:
 To specify where to install cedit:
 
     ./cedit.py --install --path /my/path/for/cedit
-    
-    ** this must be an existing directory, and you must have the required permissions to 
+
+    ** this must be an existing directory, and you must have the required permissions to
     ** create a symlink there.
 
 
 If everything went well, or you manually created the symlink yourself, you should be able to run
 cedit like this from anywhere:
-    
+
     cedit /root/needs_sudo.txt
 
 
@@ -84,10 +84,11 @@ With no settings:
 -----------------
 
 If no settings are set, cedit will try to look for a few 'popular' commands to
-work with. 
+work with.
 
 cedit will look for these editors if your favorite isn't set:
 
+* subl
 * kate
 * gedit
 * leafpad
@@ -110,7 +111,7 @@ Changes:
 Version 1.3.0:
     Added better installer options (more global dirs, $PATH search for good dir for symlinks)
     Added --remove (uninstaller) (removes the cedit symlink)
-    
+
 Version 1.2.2:
     Changed flags used when setting options, code is clearer.
     Added more help for when required modules aren't installed. (better messages)
@@ -138,4 +139,4 @@ I may add the ability to set favorite editors for favorite file-types like:
 	cedit --set .py,geany
 
 
-	
+
