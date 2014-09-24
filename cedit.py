@@ -666,8 +666,8 @@ def get_editor():
         # no editor set
         print('Be sure to set your favorite editor with: '
               '{} --editor path_to_editor'.format(SCRIPT))
-        # look for common editor
-        lst_editors = ['kate', 'gedit', 'leafpad', 'kwrite']
+        # look for common editor (current only uses /usr/bin)
+        lst_editors = ('subl', 'kate', 'gedit', 'leafpad', 'kwrite')
         for editor in lst_editors:
             spath = os.path.join('/usr/bin/', editor)
             if os.path.isfile(spath) or os.path.islink(spath):
