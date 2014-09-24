@@ -108,25 +108,26 @@ If the file doesn't require root permissions then just: `kate <filename>`
 Changes:
 --------
 
-Version 1.3.0:
-    Added better installer options (more global dirs, $PATH search for good dir for symlinks)
-    Added --remove (uninstaller) (removes the cedit symlink)
+###Version 1.4.0-2:
 
-Version 1.2.2:
-    Changed flags used when setting options, code is clearer.
-    Added more help for when required modules aren't installed. (better messages)
-    Added multi-file ability (something 1.0 should've had to begin with.)
-    ...if your favorite editor doesn't support multi-files like "file1 file2 file3",
-       you can use --shellall and a new process will be shelled for each file.
-       (most editors will at least group them in the same window, if not you will
-        have multiple windows opened.)
+Added `subl` to the list of default editors to use. I still suggest setting
+your own editor using `cedit --editor [myeditor]`. Likewise with the
+elevation command (`cedit --elevcmd [yoursudo]`).
 
+###Version 1.3.0:
 
-Bug Fixes:
-----------
+Added better installer options (more global dirs, $PATH search for good dir for symlinks)
+Added --remove (uninstaller) (removes the cedit symlink)
 
-Fixed stupid error where `needs_root()` returned `can_write()` instead of
-`needs_root() = (not can_write())`. My bad.
+###Version 1.2.2:
+
+Changed flags used when setting options, code is clearer.
+Added more help for when required modules aren't installed. (better messages)
+Added multi-file ability (something 1.0 should've had to begin with.)
+...if your favorite editor doesn't support multi-files like "file1 file2 file3",
+you can use --shellall and a new process will be shelled for each file.
+(most editors will at least group them in the same window, if not you will
+have multiple windows opened.)
 
 
 Future:
