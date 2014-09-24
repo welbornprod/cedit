@@ -83,7 +83,7 @@ if not PYTHON3:
 NAME = 'cedit'
 # Current version
 VERSION = '1.4.0'
-VERSIONX = '1'
+VERSIONX = '2'
 VERSIONSTR = '{} v. {}-{}'.format(NAME, VERSION, VERSIONX)
 SCRIPT = os.path.split(sys.argv[0])[1]
 
