@@ -108,6 +108,12 @@ If the file doesn't require root permissions then just: `kate <filename>`
 Changes:
 --------
 
+###Version 1.4.0-3:
+
+Now letting directory names pass through with a warning, instead of
+incorrectly saying "this file doesn't exist". Some editors will open the
+directory (like Sublime Text).
+
 ###Version 1.4.0-2:
 
 Added `subl` to the list of default editors to use. I still suggest setting
