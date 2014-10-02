@@ -83,7 +83,7 @@ if not PYTHON3:
 NAME = 'cedit'
 # Current version
 VERSION = '1.4.0'
-VERSIONX = '2'
+VERSIONX = '3'
 VERSIONSTR = '{} v. {}-{}'.format(NAME, VERSION, VERSIONX)
 SCRIPT = os.path.split(sys.argv[0])[1]
 
@@ -265,7 +265,7 @@ def warn_pip(importname):
         (return isn't used right now)
     """
 
-     # Check pip info
+    # Check pip info
     pipname = get_pip_name()
     pipsuggested = 'pip3' if PYTHON3 else 'pip'
     pypkg = 'python-{}'.format(pipsuggested)
@@ -330,6 +330,10 @@ def check_file(filename):
     """
 
     if os.path.isfile(filename):
+        return True
+    elif os.path.exists(filename):
+        # Directory, just pass it through. Some editors can handle this.
+        print('Trying to open a directory: {}'.format(find_dir(filename)))
         return True
     else:
         print('File does not exist!: ' + filename)
