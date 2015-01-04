@@ -803,6 +803,10 @@ def init_editor_args(args):
     global editorargs, ceditargs, DEBUG
     if ('-a' in args) or ('--alias' in args):
         # Handle adding aliases (docopt sucks when aliases have args in them)
+        # TODO: Rewrite arg parsing, remove docopt (since it can't do what
+        #       I need it to do), it will make the code much cleaner and
+        #       and easier to read. This is getting out of hand. It started
+        #       with '--' and 'editorargs', and now this 'alias' stuff.
         args = args[1:]
         try:
             args.remove('-a')
