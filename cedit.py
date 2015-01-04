@@ -81,7 +81,7 @@ if not PYTHON3:
 
 # Name, also used in creating symlinks in cmd_install()
 NAME = 'cedit'
-VERSION = '1.4.0-4'
+VERSION = '1.4.0-5'
 VERSIONSTR = '{} v. {}'.format(NAME, VERSION)
 SCRIPT = os.path.split(sys.argv[0])[1]
 
@@ -108,7 +108,7 @@ usage_str = """{verstr} (running on Python {pyversion})
     Usage:
         {script} <filename>... [options]
         {script} -a <alias_name> <alias_value> [-D]
-        {script} -A | -h | -v
+        {script} [-A | -h | -v]
         {script} -d directories [-o] [-D]
         {script} (-e path_to_editor | -c path_to_elevcmd) [-D]
         {script} -i [-u | -p dir] [-D]
@@ -1029,21 +1029,22 @@ def shell_file(filenames):
     # Start building command args.
     finalcmd = [editor]
     if filenames:
-        # See if it needs root.
+        # See if any of the files need root.
         for filename in filenames:
             if needs_root(filename):
                 # root style.
                 elevcmd = get_elevcmd()
                 finalcmd.insert(0, elevcmd)
-                print('\n'.join(['Using elevation command: {}'.format(elevcmd),
-                                 'File needs root: {}\n'.format(filename)]))
+                print('\n'.join([
+                    'Using elevation command: {}'.format(elevcmd),
+                    'File needs root: {}\n'.format(filename)]))
                 break
         # Append list of filenames.
-        finalcmd = finalcmd + filenames
+        finalcmd.extend(filenames)
 
     # Append editor args (from -- cmdline switch)
     if editorargs:
-        finalcmd = finalcmd + editorargs
+        finalcmd.extend(editorargs)
     cmdstr = ' '.join(finalcmd)
     try:
         # try running
@@ -1100,7 +1101,7 @@ def main(argd):
     # get filenames, check existence
     filenames = argd['<filename>']
     # Hack around docopt to pass args on to the editor.
-    # editorargs has already been set, now we need to remove this ARGPASS flag.
+    # editorargs has already been set, now remove this ARGPASS flag.
     if '!ARGPASS' in filenames:
         filenames.pop(filenames.index('!ARGPASS'))
 
@@ -1129,13 +1130,8 @@ def main(argd):
         if argd['--quiet'] or check_files(filenames):
             return shell_file(filenames)
     else:
-        # No cedit args, possibly editor args though.
-        if editorargs:
-            # Just pass editors args on, and execute it.
-            return shell_file(None)
-        else:
-            print('Missing arguments, see: {} --help'.format(SCRIPT))
-            return 1
+        # No cedit args, run editor (possibly with editorargs)
+        return shell_file(None)
 
 if __name__ == '__main__':
     # Initialize config
