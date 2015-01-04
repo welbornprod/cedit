@@ -391,10 +391,14 @@ def clear_cedit_paths():
     return 1
 
 
-def cmd_alias_add(name, value):
-    """ Save an alias to config. """
-    if not value:
-        print('\nAn alias needs a value.\n')
+def cmd_alias_add(name, args):
+    """ Save an alias to config.
+        Arguments:
+            name  : Name for the alias (overwrites existing names)
+            args  : List/Tuple of arguments for this alias.
+    """
+    if not args:
+        print('\nAn alias needs arguments.\n')
         return 1
 
     aliases = load_aliases()
@@ -405,7 +409,7 @@ def cmd_alias_add(name, value):
         if not confirm(msg):
             print('\nUser cancelled.\n')
             return 1
-    aliases[name] = value
+    aliases[name] = args
     try:
         aliasjson = json.dumps(aliases)
     except (TypeError, ValueError) as ex:
@@ -414,7 +418,7 @@ def cmd_alias_add(name, value):
 
     if settings.setsave('aliases', aliasjson):
         print('\nSaved alias: {}'.format(name))
-        print('      value: {}'.format(value))
+        print('      value: {}'.format(' '.join(args)))
         return 0
 
     print('\nUnable to save alias: {}'.format(name))
@@ -817,7 +821,7 @@ def init_editor_args(args):
             print(usage)
             sys.exit(1)
 
-        exitcode = cmd_alias_add(args[0], ' '.join(args[1:]))
+        exitcode = cmd_alias_add(args[0], args[1:])
         sys.exit(exitcode)
     elif '--' in args:
         # Hack around docopt to pass args onto the actual editor app.
@@ -898,10 +902,10 @@ def printdict(d, indention=0):
         print('{}{}'.format((' ' * indention), d))
 
 
-def run_alias_args(argstr, extra_args=None):
+def run_alias_args(aliasargs, extra_args=None):
     """ Run cedit with a new set of args (from an alias). """
     # Re-initialize all user args based on this alias.
-    args = argstr.split(' ')
+    args = aliasargs or []
     if extra_args:
         args.extend(extra_args)
     args.insert(0, SCRIPT)
