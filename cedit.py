@@ -81,7 +81,7 @@ if not PYTHON3:
 
 # Name, also used in creating symlinks in cmd_install()
 NAME = 'cedit'
-VERSION = '1.4.0-5'
+VERSION = '1.5.0'
 VERSIONSTR = '{} v. {}'.format(NAME, VERSION)
 SCRIPT = os.path.split(sys.argv[0])[1]
 
@@ -630,6 +630,105 @@ def get_cedit_paths():
     return sorted(configstr.split(':'))
 
 
+def get_editor():
+    """ Return the user's editor args, or the default args.
+        Exit the program on complete failure.
+    """
+    editorstr = settings.get('editor', '')
+    if not editorstr:
+        return get_editor_default()
+
+    userargs = editorstr.split()
+    if os.path.isfile(userargs[0]) or os.path.islink(userargs[0]):
+        return userargs
+
+    # try /usr/bin
+    spath = os.path.join('/usr/bin', userargs[0])
+    if os.path.isfile(spath) or os.path.islink(spath):
+        userargs[0] = spath
+        return userargs
+
+    print('\n'.join((
+        'Cannot find editor!',
+        'Make sure you set a valid editor with:',
+        '{} set editor=[editor or /path/to/editor]'
+    )).format(SCRIPT))
+    sys.exit(1)
+
+
+def get_editor_default():
+    """ Return the default editor args if available,
+        otherwise exit the program.
+    """
+    # no editor set
+    print('\n'.join((
+        'Be sure to set your favorite editor with:',
+        '{} --editor path_to_editor'
+    )).format(SCRIPT))
+    # look for common editor (current only uses /usr/bin)
+    lst_editors = ('subl', 'kate', 'gedit', 'leafpad', 'kwrite')
+    for editor in lst_editors:
+        spath = os.path.join('/usr/bin/', editor)
+        if os.path.isfile(spath) or os.path.islink(spath):
+            print('Found common editor: {}'.format(spath))
+            return [spath]
+    print('\n'.join((
+        'No common editors found!',
+        'You must set one using the above command.'
+    )))
+    sys.exit(1)
+
+
+def get_elevcmd():
+    """ Return the  user's elevation command args as a list,
+        or the default elevation command args.
+        Exits the program on complete failure.
+    """
+    elevcmdstr = settings.get('elevcmd', '')
+    if not elevcmdstr:
+        # no editor set
+        return get_elevcmd_default()
+
+    elevcmdargs = elevcmdstr.split(' ')
+    if os.path.isfile(elevcmdargs[0]) or os.path.islink(elevcmdargs[0]):
+        return elevcmdargs
+
+    # try /usr/bin
+    spath = os.path.join('/usr/bin', elevcmdargs[0])
+    if os.path.isfile(spath) or os.path.islink(spath):
+        elevcmdargs[0] = spath
+        return elevcmdargs
+
+    print('\n'.join((
+        'Cannot find elevcmd!',
+        'Make sure you set a valid elevation command with:',
+        '{} set elevcmd=[elevcmd or /path/to/elevcmd]'
+    )).format(SCRIPT))
+    sys.exit(1)
+
+
+def get_elevcmd_default():
+    """ Return the first available elevation command as a list of arguments.
+        Exit the program on failure.
+    """
+    print('\n'.join((
+        'Be sure to set your favorite elevation command with: ',
+        '    {} --elevcmd path_to_elevation_command'
+    )).format(SCRIPT))
+    # look for common elevation command
+    lst_elevs = ['kdesudo', 'gksudo', 'sudo']
+    for elevcmd in lst_elevs:
+        spath = os.path.join('/usr/bin/', elevcmd)
+        if os.path.isfile(spath) or os.path.islink(spath):
+            print('Found common elevation cmd: {}'.format(spath))
+            return [spath]
+    print('\n'.join((
+        'No common elevation commands found! ',
+        'You must set one using the above command.'
+    )))
+    sys.exit(1)
+
+
 def get_userpath():
     """ Trys to retrieve a list of $PATH entries, returns None on failure.
     """
@@ -716,65 +815,6 @@ def get_username():
     return uname
 
 
-def get_editor():
-    if not settings.get('editor', ''):
-        # no editor set
-        print('Be sure to set your favorite editor with: '
-              '{} --editor path_to_editor'.format(SCRIPT))
-        # look for common editor (current only uses /usr/bin)
-        lst_editors = ('subl', 'kate', 'gedit', 'leafpad', 'kwrite')
-        for editor in lst_editors:
-            spath = os.path.join('/usr/bin/', editor)
-            if os.path.isfile(spath) or os.path.islink(spath):
-                print('Found common editor: {}'.format(spath))
-                return spath
-        print('No common editors found! '
-              'You must set one using the above command.')
-        sys.exit(1)
-    else:
-        editor = settings.get('editor')
-        if os.path.isfile(editor) or os.path.islink(editor):
-            return editor
-        else:
-            # try /usr/bin
-            spath = os.path.join('/usr/bin', editor)
-            if os.path.isfile(spath) or os.path.islink(spath):
-                return spath
-        print('Cannot find editor! Make sure you set a valid editor with:\n'
-              '{} set editor=[editor or /path/to/editor]'.format(SCRIPT))
-        sys.exit(1)
-
-
-def get_elevcmd():
-    if not settings.get('elevcmd', ''):
-        # no editor set
-        print('Be sure to set your favorite elevation command with: '
-              '{} --elevcmd path_to_elevation_command'.format(SCRIPT))
-        # look for common elevation command
-        lst_elevs = ['kdesudo', 'gksudo', 'sudo']
-        for elevcmd in lst_elevs:
-            spath = os.path.join('/usr/bin/', elevcmd)
-            if os.path.isfile(spath) or os.path.islink(spath):
-                print('Found common elevation cmd: {}'.format(spath))
-                return spath
-        print('No common elevation commands found! '
-              'You must set one using the above command.')
-        sys.exit(1)
-    else:
-        elevcmd = settings.get('elevcmd')
-        if os.path.isfile(elevcmd) or os.path.islink(elevcmd):
-            return elevcmd
-        else:
-            # try /usr/bin
-            spath = os.path.join('/usr/bin', elevcmd)
-            if os.path.isfile(spath) or os.path.islink(spath):
-                return spath
-        print('Cannot find elevcmd! '
-              'Make sure you set a valid elevation command with:\n'
-              '{} set elevcmd=[elevcmd or /path/to/elevcmd]'.format(SCRIPT))
-        sys.exit(1)
-
-
 def good_return(returnvalue):
     """ Just returns True if returnvalue == 0,
         used in list comprehension in main()
@@ -786,27 +826,27 @@ def good_return(returnvalue):
 
 def init_args(args):
     """ Initialize editor args, and parse cedit args with docopt.
-        Sets ceditargs, editorargs (through init_editor_args())
+        Sets CEDITARGS, EDITORARGS (through init_editor_args())
         Returns a docopt arg dict.
     """
     # Handle editor args.
     init_editor_args(args)
     # Handle cedit args.
-    return docopt.docopt(usage_str, argv=ceditargs, version=VERSIONSTR)
+    return docopt.docopt(usage_str, argv=CEDITARGS, version=VERSIONSTR)
 
 
 def init_editor_args(args):
     """ Grabs extra editor args to hack around docopt.
-        Sets global editorargs if any are found.
-        Sets global ceditargs if any are found.
+        Sets global EDITORARGS if any are found.
+        Sets global CEDITARGS if any are found.
     """
-    global editorargs, ceditargs, DEBUG
+    global EDITORARGS, CEDITARGS, DEBUG
     if ('-a' in args) or ('--alias' in args):
         # Handle adding aliases (docopt sucks when aliases have args in them)
         # TODO: Rewrite arg parsing, remove docopt (since it can't do what
         #       I need it to do), it will make the code much cleaner and
         #       and easier to read. This is getting out of hand. It started
-        #       with '--' and 'editorargs', and now this 'alias' stuff.
+        #       with '--' and 'EDITORARGS', and now this 'alias' stuff.
         args = args[1:]
         try:
             args.remove('-a')
@@ -829,14 +869,14 @@ def init_editor_args(args):
         sys.exit(exitcode)
     elif '--' in args:
         # Hack around docopt to pass args onto the actual editor app.
-        ceditargs = args[1:args.index('--')]
-        if not ceditargs:
-            ceditargs = ['!ARGPASS']
-        editorargs = args[args.index('--') + 1:]
+        CEDITARGS = args[1:args.index('--')]
+        if not CEDITARGS:
+            CEDITARGS = ['!ARGPASS']
+        EDITORARGS = args[args.index('--') + 1:]
     else:
         # Normal cedit args.
-        ceditargs = args[1:]
-        editorargs = []
+        CEDITARGS = args[1:]
+        EDITORARGS = []
 
 
 def load_aliases():
@@ -923,7 +963,7 @@ def run_exec(cmdlist):
 
     try:
         # use subprocess so cedit can return control to the user.
-        ret = subprocess.Popen(cmdlist)
+        ret = subprocess.call(cmdlist)
     except Exception as exsub:
         print('Error running with subprocess:\n{}'.format(exsub))
         print('Falling back to system call.')
@@ -1005,11 +1045,14 @@ def set_setting_safe(opt, val):
         print('\n{} is already set to \'{}\''.format(opt, oldval))
         return 1
 
-    if not os.path.isfile(val):
-        val = os.path.join('/usr/bin', val)
-        if not os.path.isfile(val):
-            print('\nthat {} doesn\'t exist!: {}'.format(opt, val))
+    # Allow spaces for adding arguments to the editor.
+    args = val.split()
+    if not os.path.isfile(args[0]):
+        args[0] = os.path.join('/usr/bin', args[0])
+        if not os.path.isfile(args[0]):
+            print('\nthat {} doesn\'t exist!: {}'.format(opt, args[0]))
             return 1
+        val = ' '.join(args)
 
     if settings.setsave(opt, val):
         print('\n{} is now set to: {}'.format(opt, val))
@@ -1025,34 +1068,38 @@ def shell_file(filenames):
             filenames  : List of filenames to open.
     """
     # Grab current editor.
-    editor = get_editor()
+    usereditor = get_editor()
+    editor = usereditor[0]
     if (not editor.startswith('/')) and (not os.path.isfile(editor)):
         # try /usr/bin... (location for most popular editors)
-        editor = '/usr/bin/' + editor
+        editor = '/usr/bin/{}'.format(editor)
     if not os.path.isfile(editor):
-        print('Editor not found!: ' + editor)
+        print('Editor not found!: {}'.format(editor))
         return 1
-    print('Using editor: ' + editor)
+    usereditor[0] = editor
+    usereditorstr = ' '.join(usereditor)
+    print('Using editor: {}'.format(usereditorstr))
 
     # Start building command args.
-    finalcmd = [editor]
+    finalcmd = usereditor
     if filenames:
         # See if any of the files need root.
         for filename in filenames:
             if needs_root(filename):
                 # root style.
-                elevcmd = get_elevcmd()
-                finalcmd.insert(0, elevcmd)
-                print('\n'.join([
-                    'Using elevation command: {}'.format(elevcmd),
-                    'File needs root: {}\n'.format(filename)]))
+                elevcmdargs = get_elevcmd()
+                finalcmd = elevcmdargs + finalcmd
+                print('\n'.join((
+                    'Using elevation command: {}',
+                    'File needs root: {}\n'
+                )).format(elevcmdargs[0], filename))
                 break
         # Append list of filenames.
         finalcmd.extend(filenames)
 
     # Append editor args (from -- cmdline switch)
-    if editorargs:
-        finalcmd.extend(editorargs)
+    if EDITORARGS:
+        finalcmd.extend(EDITORARGS)
     cmdstr = ' '.join(finalcmd)
     try:
         # try running
@@ -1109,7 +1156,7 @@ def main(argd):
     # get filenames, check existence
     filenames = argd['<filename>']
     # Hack around docopt to pass args on to the editor.
-    # editorargs has already been set, now remove this ARGPASS flag.
+    # EDITORARGS has already been set, now remove this ARGPASS flag.
     if '!ARGPASS' in filenames:
         filenames.pop(filenames.index('!ARGPASS'))
 
@@ -1138,7 +1185,7 @@ def main(argd):
         if argd['--quiet'] or check_files(filenames):
             return shell_file(filenames)
     else:
-        # No cedit args, run editor (possibly with editorargs)
+        # No cedit args, run editor (possibly with EDITORARGS)
         return shell_file(None)
 
 if __name__ == '__main__':
@@ -1148,8 +1195,8 @@ if __name__ == '__main__':
     settings.name = NAME
     settings.version = VERSION
     # Initialize editor args and cedit args.
-    ceditargs = None
-    editorargs = None
+    CEDITARGS = None
+    EDITORARGS = None
     mainargd = init_args(sys.argv)
 
     mainret = main(mainargd)
