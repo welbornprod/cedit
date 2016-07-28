@@ -50,11 +50,11 @@ USAGESTR = """{ver}
     Usage:
         {script} -h | -l | -v
         {script} -s option...
-        {script} PATH... [-a editor_args...]
+        {script} PATH... [-- EDITOR_ARGS...]
 
     Options:
-        -a args,--args args     : Extra arguments to pass on to the editor.
-                                  This must come after any file paths.
+        EDITOR_ARGS             : Extra arguments to pass on to the editor.
+                                  The -- separator must be used.
         PATH                    : One or more file names to open or create.
         -h,--help               : Shows this message.
         -l,--list               : Lists current config settings.
@@ -79,7 +79,7 @@ def main(argd) -> int:
     """ Main entry point for cedit """
     import json
     print(json.dumps(argd, sort_keys=True, indent=4))
-
+    return 1
     settings.configfile_exists()
 
     if argd['--list']:
@@ -98,7 +98,7 @@ def main(argd) -> int:
         return 0 if set_option(argd['--set']) else 1
 
     opaths = parse_filepaths(argd['PATH'])
-    return 0 if shell_files(opaths, editorargs=argd['--args']) else 1
+    return 0 if shell_files(opaths, editorargs=argd['EDITOR_ARGS']) else 1
 
 
 def build_cmd(editor, paths, as_root=False, editorargs=None) -> List[str]:
@@ -273,6 +273,25 @@ def needs_root(opath) -> bool:
     except OSError as ex:
         print_err('Unable to stat path: {}\n{}'.format(filepath, ex))
         return False
+
+
+def parse_args():
+    """ Parse args with docopt, but manually set EDITOR_ARGS.
+        Because PATHS.. -- ARGS.. doesn't seem to work. It thinks -- is a
+        path argument.
+    """
+    argv = sys.argv[1:]
+    try:
+        argsep = argv.index('--')
+    except ValueError:
+        editorargs = []
+    else:
+        editorargs = argv[argsep + 1:]
+        argv = argv[:argsep]
+
+    argd = docopt(USAGESTR, argv=argv, version=VERSIONSTR)
+    argd['EDITOR_ARGS'] = editorargs
+    return argd
 
 
 def parse_filepaths(filenames) -> Set['OpenPath']:
@@ -493,7 +512,7 @@ class UserCancelled(KeyboardInterrupt):
 
 if __name__ == '__main__':
     try:
-        mainret = main(docopt(USAGESTR, version=VERSIONSTR))
+        mainret = main(parse_args())
     except (UserCancelled, KeyboardInterrupt, EOFError) as ex:
         msg = getattr(ex, 'msg', UserCancelled().msg)
         print_err(msg)
