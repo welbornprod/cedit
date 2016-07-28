@@ -27,7 +27,7 @@ if sys.version_info.major < 3:
 
 
 NAME = 'CEdit'
-__version__ = '3.0.1'
+__version__ = '3.1.0'
 VERSIONSTR = '{} v. {}'.format(NAME, __version__)
 SCRIPT = os.path.split(os.path.abspath(sys.argv[0]))[1]
 SCRIPTDIR = os.path.abspath(sys.path[0])
@@ -50,10 +50,12 @@ USAGESTR = """{ver}
     Usage:
         {script} -h | -l | -v
         {script} -s option...
-        {script} FILENAME...
+        {script} PATH... [-- EDITOR_ARGS...]
 
     Options:
-        FILENAME                : One or more file names to open or create.
+        EDITOR_ARGS             : Extra arguments to pass on to the editor.
+                                  The -- separator must be used.
+        PATH                    : One or more file names to open or create.
         -h,--help               : Shows this message.
         -l,--list               : Lists current config settings.
         -s option,--set option  : Sets a {name} option.
@@ -75,7 +77,9 @@ USAGESTR = """{ver}
 
 def main(argd) -> int:
     """ Main entry point for cedit """
-
+    import json
+    print(json.dumps(argd, sort_keys=True, indent=4))
+    return 1
     settings.configfile_exists()
 
     if argd['--list']:
@@ -93,11 +97,11 @@ def main(argd) -> int:
     elif argd['--set']:
         return 0 if set_option(argd['--set']) else 1
 
-    paths = parse_filepaths(argd['FILENAME'])
-    return 0 if shell_file(paths) else 1
+    opaths = parse_filepaths(argd['PATH'])
+    return 0 if shell_files(opaths, editorargs=argd['EDITOR_ARGS']) else 1
 
 
-def build_cmd(editor, paths, as_root=False) -> List[str]:
+def build_cmd(editor, paths, as_root=False, editorargs=None) -> List[str]:
     """ Build a shell_file command from an editor, filepaths, and root flag.
         Returns a list of command/argument strings suitable for Popen.
     """
@@ -109,6 +113,8 @@ def build_cmd(editor, paths, as_root=False) -> List[str]:
     else:
         # normal style, no root.
         cmd = [quote_arg(editor)]
+    # Use the user's editor args.
+    cmd.extend((quote_arg(s) for s in editorargs) if editorargs else [])
     # Quote file names for system().
     cmd.extend(quote_arg(p.with_linenum()) for p in paths)
     return cmd
@@ -269,6 +275,25 @@ def needs_root(opath) -> bool:
         return False
 
 
+def parse_args():
+    """ Parse args with docopt, but manually set EDITOR_ARGS.
+        Because PATHS.. -- ARGS.. doesn't seem to work. It thinks -- is a
+        path argument.
+    """
+    argv = sys.argv[1:]
+    try:
+        argsep = argv.index('--')
+    except ValueError:
+        editorargs = []
+    else:
+        editorargs = argv[argsep + 1:]
+        argv = argv[:argsep]
+
+    argd = docopt(USAGESTR, argv=argv, version=VERSIONSTR)
+    argd['EDITOR_ARGS'] = editorargs
+    return argd
+
+
 def parse_filepaths(filenames) -> Set['OpenPath']:
     """ Ensure that file/path names exist. Confirm any non-existing path
         names.
@@ -375,12 +400,12 @@ def set_option(args) -> bool:
     return True
 
 
-def shell_file(paths) -> bool:
-    as_root = any(needs_root(p) for p in paths)
+def shell_files(opaths, editorargs=None) -> bool:
+    as_root = any(needs_root(p) for p in opaths)
     editor = get_editor(as_root=as_root)
     print('Using editor: {}'.format(editor))
-    print('Opening {}'.format(filenames_desc(paths)))
-    cmd = build_cmd(editor, paths, as_root=as_root)
+    print('Opening {}'.format(filenames_desc(opaths)))
+    cmd = build_cmd(editor, opaths, as_root=as_root, editorargs=editorargs)
     try:
         # try running
         run_exec(cmd)
@@ -487,7 +512,7 @@ class UserCancelled(KeyboardInterrupt):
 
 if __name__ == '__main__':
     try:
-        mainret = main(docopt(USAGESTR, version=VERSIONSTR))
+        mainret = main(parse_args())
     except (UserCancelled, KeyboardInterrupt, EOFError) as ex:
         msg = getattr(ex, 'msg', UserCancelled().msg)
         print_err(msg)
