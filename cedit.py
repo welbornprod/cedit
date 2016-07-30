@@ -77,9 +77,6 @@ USAGESTR = """{ver}
 
 def main(argd) -> int:
     """ Main entry point for cedit """
-    import json
-    print(json.dumps(argd, sort_keys=True, indent=4))
-    return 1
     settings.configfile_exists()
 
     if argd['--list']:
