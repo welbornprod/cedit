@@ -21,13 +21,13 @@ from typing import List, Set, Tuple
 
 from docopt import docopt
 from easysettings import EasySettings
-if sys.version_info.major < 3:
+if (sys.version_info.major < 3) and (sys.version_info.minor < 5):
     print('CEdit is designed to run on Python 3.5+ only.', file=sys.stderr)
     sys.exit(1)
 
 
 NAME = 'CEdit'
-__version__ = '3.1.0'
+__version__ = '3.1.1'
 VERSIONSTR = '{} v. {}'.format(NAME, __version__)
 SCRIPT = os.path.split(os.path.abspath(sys.argv[0]))[1]
 SCRIPTDIR = os.path.abspath(sys.path[0])
