@@ -79,7 +79,7 @@ def main(argd) -> int:
     settings.configfile_exists()
 
     if argd['--list']:
-        exitcode = 0 if settings.settings else 1
+        exitcode = 0 if settings else 1
         print('Current cedit settings:')
         print(
             '    {}'.format(
@@ -89,7 +89,7 @@ def main(argd) -> int:
                 )
             )
         )
-        if not settings.settings:
+        if not settings:
             print(
                 'No settings configured. Set them with `cedit -s opt=val`.',
                 file=sys.stderr
