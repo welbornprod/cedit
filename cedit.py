@@ -12,7 +12,6 @@ Created on Jan 19, 2013
 from __future__ import print_function
 import os
 import stat
-import subprocess
 import stat
 import sys
 from collections import namedtuple
@@ -27,7 +26,7 @@ if (sys.version_info.major < 3) and (sys.version_info.minor < 5):
 
 
 NAME = 'CEdit'
-__version__ = '3.1.1'
+__version__ = '3.1.2'
 VERSIONSTR = '{} v. {}'.format(NAME, __version__)
 SCRIPT = os.path.split(os.path.abspath(sys.argv[0]))[1]
 SCRIPTDIR = os.path.abspath(sys.path[0])
@@ -80,17 +79,22 @@ def main(argd) -> int:
     settings.configfile_exists()
 
     if argd['--list']:
-        configopts = settings.list_settings()
-        if not configopts:
-            print('No settings configured.')
-            print('    {}'.format('\n    '.join(
-                '{:>10}: [not set]'.format(opt) for opt in OPTIONS
-            )))
-            return 1
+        exitcode = 0 if settings.settings else 1
         print('Current cedit settings:')
-        print('    {}'.format('\n    '.join(
-            '{:>10}: {}'.format(k, v) for k, v in configopts)))
-        return 0
+        print(
+            '    {}'.format(
+                '\n    '.join(
+                    '{:>10}: {}'.format(k, settings.get(k, '[not set]'))
+                    for k in sorted(OPTIONS)
+                )
+            )
+        )
+        if not settings.settings:
+            print(
+                'No settings configured. Set them with `cedit -s opt=val`.',
+                file=sys.stderr
+            )
+        return exitcode
     elif argd['--set']:
         return 0 if set_option(argd['--set']) else 1
 
